@@ -42,13 +42,14 @@ function attachRendererFiber(hook: Hook, rid: string, renderer: ReactRenderer): 
   }
 
   function hasDataChanged(prevFiber, nextFiber) {
-    if (prevFiber.tag === ClassComponent) {
-      // Skip if the class performed no work (shouldComponentUpdate bailout).
-      // eslint-disable-next-line no-bitwise
-      if ((nextFiber.effectTag & PerformedWork) !== PerformedWork) {
-        return false;
-      }
+    // Disregard any bailouts.
+    // React explicitly marks fibers that have performed work.
+    // eslint-disable-next-line no-bitwise
+    if ((nextFiber.effectTag & PerformedWork) !== PerformedWork) {
+      return false;
+    }
 
+    if (prevFiber.tag === ClassComponent) {
       // Only classes have context.
       if (prevFiber.stateNode.context !== nextFiber.stateNode.context) {
         return true;
@@ -58,11 +59,7 @@ function attachRendererFiber(hook: Hook, rid: string, renderer: ReactRenderer): 
         return true;
       }
     }
-    // Always treat context consumers as changed.
-    // This ensures we don't skip highlighting their updates.
-    if (prevFiber.tag === ContextConsumer) {
-      return true;
-    }
+
     // Compare the fields that would result in observable changes in DevTools.
     // We don't compare type, tag, index, and key, because these are known to match.
     return (
